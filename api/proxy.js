@@ -31,7 +31,8 @@ module.exports = async (req, res) => {
     }
 
     const API_KEY = process.env.CLASH_ROYALE_API_KEY;
-    const API_BASE = 'https://api.clashroyale.com/v1';
+    // Default to official API, but allow override for community proxies (e.g. RoyaleAPI)
+    const API_BASE = process.env.CLASH_ROYALE_API_BASE || 'https://api.clashroyale.com/v1';
 
     // Helper to get outbound IP for whitelisting help
     const getOutboundIP = () => new Promise(resolve => {

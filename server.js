@@ -29,16 +29,21 @@ API_KEY = API_KEY.trim().replace(/\s+/g, '');
 console.log('✅ API Key loaded and sanitized');
 
 const PORT = 3000;
-const API_BASE = 'https://api.clashroyale.com/v1';
+// Default to official API, but allow override for community proxies
+let API_BASE = 'https://api.clashroyale.com/v1';
+try {
+    const config = require('./config.js');
+    if (config.API_BASE) API_BASE = config.API_BASE;
+} catch (e) { }
 
 // Detect and log outgoing IP (for Supercell Developer Portal whitelisting)
 async function detectOutgoingIP() {
     try {
         const https = require('https');
         return new Promise((resolve, reject) => {
-            https.get('https://api4.ipify.org?format=json', { 
+            https.get('https://api4.ipify.org?format=json', {
                 rejectUnauthorized: false,
-                timeout: 5000 
+                timeout: 5000
             }, (res) => {
                 let data = '';
                 res.on('data', chunk => data += chunk);
@@ -79,7 +84,7 @@ const server = http.createServer((req, res) => {
     // Handle API proxy requests
     if (pathname.startsWith('/api/')) {
         let apiPath = pathname.replace('/api', '');
-        
+
         // Normalize player tag in URL if present
         // The # symbol needs to be URL-encoded as %23
         if (apiPath.includes('/players/')) {
@@ -99,7 +104,7 @@ const server = http.createServer((req, res) => {
                 apiPath = apiPath.replace(`/players/${tagMatch[1]}`, `/players/${encodedTag}`);
             }
         }
-        
+
         const apiUrl = `${API_BASE}${apiPath}${parsedUrl.search || ''}`;
 
         console.log(`📡 Proxying: ${apiPath}`);
@@ -124,7 +129,7 @@ const server = http.createServer((req, res) => {
             apiRes.on('end', () => {
                 let statusCode = apiRes.statusCode;
                 let responseData = data;
-                
+
                 // Try to parse JSON for better error messages
                 try {
                     const jsonData = JSON.parse(data);
@@ -136,7 +141,7 @@ const server = http.createServer((req, res) => {
                 } catch (e) {
                     // Not JSON, that's okay
                 }
-                
+
                 res.writeHead(statusCode, {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*',
@@ -150,7 +155,7 @@ const server = http.createServer((req, res) => {
         request.on('error', (err) => {
             console.error('❌ API Request Error:', err.message);
             let errorMessage = err.message;
-            
+
             if (err.message.includes('certificate') || err.message.includes('issuer')) {
                 errorMessage = 'SSL certificate error. This has been fixed, please try again.';
             } else if (err.message.includes('timeout')) {
@@ -158,13 +163,13 @@ const server = http.createServer((req, res) => {
             } else if (err.message.includes('ENOTFOUND')) {
                 errorMessage = 'Cannot reach Clash Royale API. Check your internet connection.';
             }
-            
+
             res.writeHead(500, {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
             });
-            res.end(JSON.stringify({ 
-                error: 'API request failed', 
+            res.end(JSON.stringify({
+                error: 'API request failed',
                 message: errorMessage,
                 details: process.env.NODE_ENV === 'development' ? err.message : undefined
             }));
@@ -174,7 +179,7 @@ const server = http.createServer((req, res) => {
             request.destroy();
             console.error('❌ Request timeout');
         });
-        
+
         return;
     }
 
@@ -213,7 +218,7 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, async () => {
     console.log(`\n🚀 Server running at http://localhost:${PORT}`);
     console.log(`📋 Open http://localhost:${PORT} in your browser\n`);
-    
+
     // Detect and display outgoing IP for whitelisting
     await detectOutgoingIP();
 });
