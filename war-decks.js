@@ -1166,10 +1166,12 @@ function copyDeck(deckId, event) {
     }).filter(id => id !== undefined);
 
     if (cardIds.length < 8) {
-        console.warn("Could not find IDs for all cards in deck:", deck.name);
+        alert(`Cannot copy deck: Only ${cardIds.length}/8 cards identified. Please ensure all 120+ cards are whitelisted/available.`);
+        return;
     }
 
-    const deckLink = `https://link.clashroyale.com/deck/en?deck=${cardIds.join(';')}`;
+    // Official Clash Royale deep link scheme
+    const deckLink = `clashroyale://copyDeck?deck=${cardIds.join(';')}`;
 
     // Create a temporary indicator
     const btn = event.currentTarget;
@@ -1182,7 +1184,15 @@ function copyDeck(deckId, event) {
         btn.classList.remove('bg-green-100', 'text-green-600', 'border-green-200');
     }, 2000);
 
-    window.open(deckLink, '_blank');
+    // Try opening the deep link directly
+    window.location.href = deckLink;
+
+    // Fallback: If deep link fails after 500ms, try the web link
+    setTimeout(() => {
+        if (document.hasFocus()) {
+            window.open(`https://link.clashroyale.com/deck/en?deck=${cardIds.join(';')}`, '_blank');
+        }
+    }, 500);
 }
 
 /**
@@ -1312,7 +1322,7 @@ function renderDeck(deck, index) {
                 </div>
             </div>
             
-            <div class="grid grid-cols-8 gap-1.5">
+            <div class="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 gap-2.5 max-w-2xl">
                 ${cardsHtml}
             </div>
         </div>
