@@ -47,20 +47,20 @@ function convertLevel(apiLevel, rarity) {
         console.warn('Missing level for rarity:', rarity);
         return 0;
     }
-    
+
     // Convert to number if it's a string
     const levelNum = parseInt(apiLevel, 10);
     if (isNaN(levelNum) || levelNum <= 0) {
         console.warn('Invalid level:', apiLevel, 'for rarity:', rarity);
         return 0;
     }
-    
+
     // Normalize rarity to match our keys (capitalize first letter)
     const normalizedRarity = rarity ? rarity.charAt(0).toUpperCase() + rarity.slice(1).toLowerCase() : 'Common';
-    
+
     let displayLevel;
     const offset = LEVEL_OFFSETS[normalizedRarity];
-    
+
     if (offset === undefined) {
         console.warn('Unknown rarity:', rarity, 'using Common offset');
         displayLevel = levelNum; // Default to Common (no offset)
@@ -70,7 +70,7 @@ function convertLevel(apiLevel, rarity) {
     } else {
         displayLevel = levelNum + offset;
     }
-    
+
     // Cap at maximum level for rarity
     // Updated: Legendary cards can go up to level 14, so we use a higher cap
     const maxLevel = MAX_LEVELS[normalizedRarity] || 16;
@@ -149,17 +149,17 @@ function getBorderColor(rarity) {
  */
 function getRarityGems(cardData, playerCard) {
     const gems = [];
-    
+
     // Removed purple evolved gem - it's part of the card artwork, not a UI element
-    
+
     if (isHero(playerCard)) {
         gems.push({ type: 'hero', color: 'gold', owned: true });
     }
-    
+
     if (isChampion(playerCard)) {
         gems.push({ type: 'champion', color: 'orange', owned: true });
     }
-    
+
     return gems;
 }
 
@@ -168,16 +168,11 @@ function getRarityGems(cardData, playerCard) {
  * Uses local proxy server when running locally
  */
 async function fetchWithAuth(url) {
-    // Check if we're running locally (localhost or 127.0.0.1)
-    const isLocal = window.location.hostname === 'localhost' || 
-                   window.location.hostname === '127.0.0.1' ||
-                   window.location.hostname === '';
-    
-    // Use local proxy if running locally, otherwise try direct (will need CORS proxy)
-    const proxyUrl = isLocal ? '/api' : '';
-    
-    const finalUrl = proxyUrl ? `${proxyUrl}${url.replace('https://api.clashroyale.com/v1', '')}` : url;
-    
+    // Always use the /api proxy route. 
+    // On local machine, it's handled by server.js.
+    // On Vercel, it's handled by api/proxy.js via vercel.json rewrites.
+    const finalUrl = `/api${url.replace('https://api.clashroyale.com/v1', '')}`;
+
     try {
         const response = await fetch(finalUrl, {
             method: 'GET',
@@ -186,18 +181,18 @@ async function fetchWithAuth(url) {
             },
             mode: 'cors'
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             let errorMessage;
-            
+
             try {
                 const errorData = JSON.parse(errorText);
                 errorMessage = errorData.message || errorData.reason || 'Unknown error';
             } catch (e) {
                 errorMessage = errorText || `HTTP ${response.status}`;
             }
-            
+
             if (response.status === 404) {
                 throw new Error('Player tag not found. Please check the tag and try again.');
             } else if (response.status === 403) {
@@ -207,7 +202,7 @@ async function fetchWithAuth(url) {
             }
             throw new Error(`API Error: ${response.status} - ${errorMessage}`);
         }
-        
+
         return await response.json();
     } catch (error) {
         if (error.message.includes('Failed to fetch') || error.message.includes('CORS') || error.message.includes('NetworkError')) {
@@ -229,7 +224,7 @@ async function fetchAllCards() {
     if (allCardsCache) {
         return allCardsCache;
     }
-    
+
     try {
         const data = await fetchWithAuth(`${API_BASE_URL}/cards`);
         allCardsCache = data;
@@ -263,19 +258,19 @@ function matchCardsWithData(playerCards, allCardsData) {
     allCardsData.items.forEach(card => {
         cardMap.set(card.name, card);
     });
-    
+
     return playerCards.map(playerCard => {
         const cardData = cardMap.get(playerCard.name);
-        
+
         // Debug: log first card to see structure
         if (playerCards.indexOf(playerCard) === 0) {
             console.log('Sample player card:', playerCard);
             console.log('Matched card data:', cardData);
         }
-        
+
         // Ensure we have rarity - prefer from cardData if playerCard doesn't have it
         const rarity = playerCard.rarity || (cardData ? cardData.rarity : 'Common');
-        
+
         return {
             ...playerCard,
             rarity: rarity, // Ensure rarity is set
@@ -289,21 +284,21 @@ function matchCardsWithData(playerCards, allCardsData) {
  */
 function renderCard(card) {
     const { cardData, level, maxEvolutionLevel, elixirCost, rarity, name } = card;
-    
+
     if (!cardData) {
         console.warn(`Card data not found for: ${name}`);
         return '';
     }
-    
+
     // Get rarity from cardData if not in player card, and normalize case
     const cardRarity = rarity || cardData.rarity || 'Common';
     const normalizedRarity = cardRarity ? cardRarity.charAt(0).toUpperCase() + cardRarity.slice(1).toLowerCase() : 'Common';
-    
+
     // Ensure level is a number (handle undefined/null)
     const cardLevel = level !== undefined && level !== null ? level : 0;
-    
+
     const displayLevel = convertLevel(cardLevel, normalizedRarity);
-    
+
     // Debug: log first card to verify conversion
     if (cardLevel > 0 && displayLevel === 0) {
         console.warn(`Level conversion issue for ${name}: API level ${cardLevel}, rarity ${normalizedRarity}, result ${displayLevel}`);
@@ -312,12 +307,12 @@ function renderCard(card) {
     const borderColorHex = getBorderColor(borderColorKey);
     const imageUrl = getCardImageUrl(cardData, card);
     const gems = getRarityGems(cardData, card);
-    
+
     // Check if card can evolve but user doesn't own the evolved variant
     const canEvolveCard = canEvolve(card);
     const ownsEvolvedCard = hasEvolved(card);
     const canEvolveButNotOwned = canEvolveCard && !ownsEvolvedCard;
-    
+
     // Debug: log Zap card specifically
     if (name === 'Zap') {
         console.log('Zap card debug:', {
@@ -328,10 +323,10 @@ function renderCard(card) {
             canEvolveButNotOwned: canEvolveButNotOwned
         });
     }
-    
+
     // Determine if card is boosted (has upgrade available)
     const isBoosted = false; // This would need additional logic
-    
+
     // Render rarity gems (purple for evolved, gold for hero, orange for champion)
     const gemsHtml = gems.map((gem, index) => {
         const gemColors = {
@@ -347,7 +342,7 @@ function renderCard(card) {
         // Position gems: first at top-right, second (if both) slightly left
         const position = index === 0 ? 'top-1 right-1' : 'top-1 right-8';
         let gemColorHex = gemColors[gem.color] || '#A855F7';
-        
+
         // If evolved gem is not owned, grey it
         if (gem.type === 'evolved' && !gem.owned) {
             gemColorHex = '#6B7280'; // Grey color
@@ -357,7 +352,7 @@ function renderCard(card) {
                 </div>
             `;
         }
-        
+
         // Also grey hero/champion gems if card can evolve but evolved variant not owned
         if ((gem.type === 'hero' || gem.type === 'champion') && canEvolveButNotOwned) {
             gemColorHex = '#6B7280'; // Grey color
@@ -367,14 +362,14 @@ function renderCard(card) {
                 </div>
             `;
         }
-        
+
         return `
             <div class="absolute ${position} rounded-full p-0.5 border border-white z-20" style="background-color: ${gemColorHex};">
                 <span class="material-icons-round text-white text-[10px] block">${gemIcons[gem.type]}</span>
             </div>
         `;
     }).join('');
-    
+
     return `
         <div class="group relative flex flex-col items-center">
             <div class="relative w-full aspect-[4/5] rounded-lg border-2 bg-slate-800 overflow-hidden shadow-md" style="border-color: ${borderColorHex};">
@@ -418,7 +413,7 @@ function renderCard(card) {
  */
 function renderCards(cards) {
     const container = document.getElementById('cardContainer');
-    
+
     if (!cards || cards.length === 0) {
         container.innerHTML = `
             <div class="text-center text-slate-500 dark:text-slate-400 py-12">
@@ -428,7 +423,7 @@ function renderCards(cards) {
         `;
         return;
     }
-    
+
     // Sort cards by display level (highest first), then by name
     const sortedCards = [...cards].sort((a, b) => {
         // Get rarity for normalization
@@ -436,26 +431,26 @@ function renderCards(cards) {
         const rarityB = b.rarity || (b.cardData ? b.cardData.rarity : 'Common');
         const normalizedRarityA = rarityA ? rarityA.charAt(0).toUpperCase() + rarityA.slice(1).toLowerCase() : 'Common';
         const normalizedRarityB = rarityB ? rarityB.charAt(0).toUpperCase() + rarityB.slice(1).toLowerCase() : 'Common';
-        
+
         // Calculate display levels
         const levelA = a.level !== undefined && a.level !== null ? a.level : 0;
         const levelB = b.level !== undefined && b.level !== null ? b.level : 0;
         const displayLevelA = convertLevel(levelA, normalizedRarityA);
         const displayLevelB = convertLevel(levelB, normalizedRarityB);
-        
+
         // Sort by level (descending), then by name (ascending)
         if (displayLevelA !== displayLevelB) {
             return displayLevelB - displayLevelA;
         }
         return (a.name || '').localeCompare(b.name || '');
     });
-    
+
     // Group cards by boosted status (for now, just show all)
     const boostedCards = sortedCards.filter(card => false); // Would need logic to determine boosted
     const foundCards = sortedCards;
-    
+
     let html = '';
-    
+
     if (boostedCards.length > 0) {
         html += `
             <section>
@@ -469,7 +464,7 @@ function renderCards(cards) {
             </section>
         `;
     }
-    
+
     html += `
         <section>
             <div class="flex items-center justify-center mb-3">
@@ -480,7 +475,7 @@ function renderCards(cards) {
             </div>
         </section>
     `;
-    
+
     container.innerHTML = html;
 }
 
@@ -503,7 +498,7 @@ function showLoading() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     const errorDisplay = document.getElementById('errorDisplay');
     const cardContainer = document.getElementById('cardContainer');
-    
+
     if (loadingIndicator) loadingIndicator.classList.remove('hidden');
     if (errorDisplay) errorDisplay.classList.add('hidden');
     if (cardContainer) cardContainer.innerHTML = '';
@@ -542,33 +537,33 @@ async function loadCollection(playerTag) {
         showError('Please enter a valid player tag');
         return;
     }
-    
+
     // Validate tag format
     if (!playerTag.startsWith('#')) {
         playerTag = '#' + playerTag;
     }
-    
+
     showLoading();
     hideError();
-    
+
     try {
         // Fetch all cards and player data in parallel
         const [allCardsData, playerData] = await Promise.all([
             fetchAllCards(),
             fetchPlayerData(playerTag)
         ]);
-        
+
         // Match player cards with card data
         const matchedCards = matchCardsWithData(playerData.cards || [], allCardsData);
-        
+
         // Update stats
         const totalCards = allCardsData.items?.length || 0;
         const foundCards = matchedCards.length;
         updateStats(foundCards, totalCards);
-        
+
         // Render cards
         renderCards(matchedCards);
-        
+
         hideLoading();
     } catch (error) {
         console.error('Error loading collection:', error);
@@ -584,26 +579,26 @@ function init() {
     if (window.location.pathname.includes('war-decks') || window.location.href.includes('war-decks')) {
         return; // Let war-decks.js handle initialization
     }
-    
+
     const fetchButton = document.getElementById('fetchButton');
     const playerTagInput = document.getElementById('playerTagInput');
-    
+
     if (!fetchButton || !playerTagInput) {
         return; // Elements not found, probably wrong page
     }
-    
+
     fetchButton.addEventListener('click', () => {
         const playerTag = playerTagInput.value.trim();
         loadCollection(playerTag);
     });
-    
+
     playerTagInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             const playerTag = playerTagInput.value.trim();
             loadCollection(playerTag);
         }
     });
-    
+
     // Load default collection on page load
     // Uncomment to auto-load on page load:
     // loadCollection('#YQQQYL0R');
