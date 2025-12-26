@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Clash Royale Collection</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FFA000", // The iconic Level Up Orange
+                        secondary: "#3B82F6", // Progress Blue
+                        accent: "#EC4899", // Elixir Pink
+                        "background-light": "#F0F2F5",
+                        "background-dark": "#101826", // Deep blue-black gaming background
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1E293B",
+                        "rare-common": "#9CA3AF",
+                        "rare-rare": "#F97316",
+                        "rare-epic": "#A855F7",
+                        "rare-legendary": "#EAB308",
+                        "rare-champion": "#EF4444",
+                    },
+                    fontFamily: {
+                        display: ["Titan One", "cursive"],
+                        body: ["Nunito", "sans-serif"],
+                    },
+                    boxShadow: {
+                        'inner-strong': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.6)',
+                        'glow': '0 0 15px rgba(168, 85, 247, 0.5)',
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    },
+                    backgroundImage: {
+                        'legendary-gradient': 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)',
+                        'card-shine': 'linear-gradient(rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)',
+                    }
+                },
+            },
+        };
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        .text-stroke-sm {
+            -webkit-text-stroke: 1px black;
+            text-shadow: 0px 2px 0px rgba(0, 0, 0, 0.5);
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 font-body antialiased transition-colors duration-200">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col relative pb-20">
+        <header
+            class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center justify-between w-full">
+                    <h1 class="font-display text-xl tracking-wide text-slate-900 dark:text-white drop-shadow-sm">
+                        Card Collection
+                    </h1>
+                    <a href="index.html" class="text-xs text-primary hover:underline font-bold">
+                        War Decks →
+                    </a>
+                </div>
+            </div>
+
+            <!-- Player Tag Input -->
+            <div class="flex gap-2 mb-2">
+                <input type="text" id="playerTagInput" placeholder="#YQQQYL0R" value="#YQQQYL0R"
+                    class="flex-1 px-3 py-2 rounded-lg bg-surface-light dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary" />
+                <button id="fetchButton"
+                    class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold shadow-md hover:bg-opacity-90 transition-colors flex items-center gap-1">
+                    <span class="material-icons-round text-sm">search</span>
+                    Load
+                </button>
+            </div>
+
+            <!-- Stats Display -->
+            <div id="statsDisplay" class="hidden">
+                <p class="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    Found: <span id="foundCount" class="text-primary">0</span>/<span id="totalCount">0</span>
+                </p>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden mt-2">
+                <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                    <span>Loading collection...</span>
+                </div>
+            </div>
+
+            <!-- Error Display -->
+            <div id="errorDisplay"
+                class="hidden mt-2 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
+                <p id="errorMessage" class="text-xs text-red-700 dark:text-red-300"></p>
+            </div>
+        </header>
+
+        <main class="flex-1 px-3 py-4 space-y-6" id="cardContainer">
+            <div class="text-center text-slate-500 dark:text-slate-400 py-12">
+                <span class="material-icons-round text-4xl mb-2">style</span>
+                <p class="text-sm">Enter your player tag and click Load to view your collection</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Check local storage or system preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</body>
+
+</html>
