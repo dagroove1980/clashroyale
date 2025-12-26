@@ -73,7 +73,9 @@ module.exports = async (req, res) => {
                         error: 'Forbidden',
                         message: 'IP not whitelisted in Supercell Developer Portal.',
                         outboundIP: outboundIP,
-                        instructions: `Add the IP "${outboundIP}" to your API key whitelist at https://developer.clashroyale.com/`
+                        targetUrl: apiUrl, // Diagnostic info
+                        apiBase: API_BASE, // Diagnostic info
+                        instructions: `Add the IP "${outboundIP}" to your API key whitelist at https://developer.clashroyale.com/. If you intended to use a proxy, check your CLASH_ROYALE_API_BASE env var.`
                     });
                 } else {
                     res.status(apiRes.statusCode);
