@@ -33,6 +33,17 @@ module.exports = async (req, res) => {
     const API_KEY = process.env.CLASH_ROYALE_API_KEY;
     const API_BASE = 'https://api.clashroyale.com/v1';
 
+    // Helper to get outbound IP for whitelisting help
+    const getOutboundIP = () => new Promise(resolve => {
+        https.get('https://api4.ipify.org?format=json', (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try { resolve(JSON.parse(data).ip); } catch (e) { resolve('unknown'); }
+            });
+        }).on('error', () => resolve('unknown')).setTimeout(2000, () => resolve('timeout'));
+    });
+
     if (!API_KEY) {
         return res.status(500).json({
             error: 'API_KEY not configured',
@@ -54,10 +65,20 @@ module.exports = async (req, res) => {
         const request = https.get(apiUrl, options, (apiRes) => {
             let data = '';
             apiRes.on('data', (chunk) => data += chunk);
-            apiRes.on('end', () => {
-                res.status(apiRes.statusCode);
-                res.setHeader('Content-Type', 'application/json');
-                res.send(data);
+            apiRes.on('end', async () => {
+                if (apiRes.statusCode === 403) {
+                    const outboundIP = await getOutboundIP();
+                    res.status(403).json({
+                        error: 'Forbidden',
+                        message: 'IP not whitelisted in Supercell Developer Portal.',
+                        outboundIP: outboundIP,
+                        instructions: `Add the IP "${outboundIP}" to your API key whitelist at https://developer.clashroyale.com/`
+                    });
+                } else {
+                    res.status(apiRes.statusCode);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.send(data);
+                }
                 resolve();
             });
         });

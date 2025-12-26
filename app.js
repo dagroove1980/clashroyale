@@ -185,10 +185,12 @@ async function fetchWithAuth(url) {
         if (!response.ok) {
             const errorText = await response.text();
             let errorMessage;
+            let errorDetails = null;
 
             try {
                 const errorData = JSON.parse(errorText);
                 errorMessage = errorData.message || errorData.reason || 'Unknown error';
+                errorDetails = errorData;
             } catch (e) {
                 errorMessage = errorText || `HTTP ${response.status}`;
             }
@@ -196,7 +198,8 @@ async function fetchWithAuth(url) {
             if (response.status === 404) {
                 throw new Error('Player tag not found. Please check the tag and try again.');
             } else if (response.status === 403) {
-                throw new Error('403 Forbidden: Your IP address may not be whitelisted in Supercell Developer Portal. Check the server console for your outgoing IP address and add it to your API key whitelist.');
+                const instructions = errorDetails?.instructions ? `\n\n${errorDetails.instructions}` : '';
+                throw new Error(`403 Forbidden: Your IP address may not be whitelisted.${instructions}`);
             } else if (response.status === 503) {
                 throw new Error('Clash Royale API is temporarily unavailable. Please try again later.');
             }
