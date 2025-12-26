@@ -199,7 +199,8 @@ async function fetchWithAuth(url) {
                 throw new Error('Player tag not found. Please check the tag and try again.');
             } else if (response.status === 403) {
                 const instructions = errorDetails?.instructions ? `\n\n${errorDetails.instructions}` : '';
-                throw new Error(`403 Forbidden: Your IP address may not be whitelisted.${instructions}`);
+                const diagInfo = errorDetails ? `\n(Target: ${errorDetails.targetUrl})` : '';
+                throw new Error(`403 Forbidden: Your IP address may not be whitelisted.${instructions}${diagInfo}`);
             } else if (response.status === 503) {
                 throw new Error('Clash Royale API is temporarily unavailable. Please try again later.');
             }
