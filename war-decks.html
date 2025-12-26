@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Clash Royale War Decks</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Titan+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#FFA000",
+                        secondary: "#3B82F6",
+                        accent: "#EC4899",
+                        "background-light": "#F0F2F5",
+                        "background-dark": "#101826",
+                        "surface-light": "#FFFFFF",
+                        "surface-dark": "#1E293B",
+                        "rare-common": "#9CA3AF",
+                        "rare-rare": "#F97316",
+                        "rare-epic": "#A855F7",
+                        "rare-legendary": "#EAB308",
+                        "rare-champion": "#EF4444",
+                    },
+                    fontFamily: {
+                        display: ["Titan One", "cursive"],
+                        body: ["Nunito", "sans-serif"],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-100 font-body antialiased transition-colors duration-200">
+    <div class="max-w-6xl mx-auto min-h-screen flex flex-col relative pb-20 px-4">
+        <header class="sticky top-0 z-30 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 shadow-md">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <h1 class="font-display text-xl tracking-wide text-slate-900 dark:text-white drop-shadow-sm">
+                        Clan War Deck Recommender
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Get the best 4 war decks based on your card levels
+                    </p>
+                </div>
+                <a href="index.html" class="text-xs text-primary hover:underline font-bold ml-4">
+                    ← Collection
+                </a>
+            </div>
+            
+            <!-- Player Tag Input -->
+            <div class="flex gap-2 mb-2">
+                <input 
+                    type="text" 
+                    id="playerTagInput" 
+                    placeholder="#YQQQYL0R" 
+                    value="#YQQQYL0R"
+                    class="flex-1 px-3 py-2 rounded-lg bg-surface-light dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button 
+                    id="fetchButton"
+                    class="px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold shadow-md hover:bg-opacity-90 transition-colors flex items-center gap-1"
+                >
+                    <span class="material-icons-round text-sm">search</span>
+                    Find Decks
+                </button>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="hidden mt-2">
+                <div class="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                    <span>Analyzing your collection and finding best decks...</span>
+                </div>
+            </div>
+            
+            <!-- Error Display -->
+            <div id="errorDisplay" class="hidden mt-2 p-2 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
+                <p id="errorMessage" class="text-xs text-red-700 dark:text-red-300"></p>
+            </div>
+        </header>
+        
+        <main class="flex-1 py-4 space-y-6" id="decksContainer">
+            <div class="text-center text-slate-500 dark:text-slate-400 py-12">
+                <span class="material-icons-round text-4xl mb-2">deck</span>
+                <p class="text-sm">Enter your player tag to get personalized war deck recommendations</p>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Guide Modal -->
+    <div id="guideModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-surface-light dark:bg-surface-dark w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="bg-primary px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-white">menu_book</span>
+                    <h2 class="font-display text-white text-lg" id="guideTitle">How to Play</h2>
+                </div>
+                <button id="closeModal" class="text-white hover:bg-white/20 rounded-full p-1 transition-colors">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div id="guideContent" class="space-y-4 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    <!-- Guide will be injected here -->
+                </div>
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button id="guideGotIt" class="w-full py-2.5 bg-primary text-white font-bold rounded-xl shadow-lg hover:bg-opacity-90 transition-all active:scale-95">
+                        Got it, thanks!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+    <script src="war-decks.js"></script>
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+</body>
+</html>
+
