@@ -69,13 +69,16 @@ module.exports = async (req, res) => {
             apiRes.on('end', async () => {
                 if (apiRes.statusCode === 403) {
                     const outboundIP = await getOutboundIP();
+                    const isProxy = API_BASE.includes('royaleapi');
                     res.status(403).json({
                         error: 'Forbidden',
                         message: 'IP not whitelisted in Supercell Developer Portal.',
                         outboundIP: outboundIP,
-                        targetUrl: apiUrl, // Diagnostic info
-                        apiBase: API_BASE, // Diagnostic info
-                        instructions: `Add the IP "${outboundIP}" to your API key whitelist at https://developer.clashroyale.com/. If you intended to use a proxy, check your CLASH_ROYALE_API_BASE env var.`
+                        targetUrl: apiUrl,
+                        apiBase: API_BASE,
+                        instructions: isProxy
+                            ? `To use RoyaleAPI Proxy, you MUST whitelist their IP "45.79.218.79" in your API key settings at https://developer.clashroyale.com/.`
+                            : `Add the IP "${outboundIP}" to your API key whitelist at https://developer.clashroyale.com/. If you intended to use a proxy, check your CLASH_ROYALE_API_BASE env var.`
                     });
                 } else {
                     res.status(apiRes.statusCode);
